@@ -1239,6 +1239,7 @@
         <p style="font-size:0.8rem;color:var(--muted);">Ты в списке участников:</p>
         <p class="nick" id="playerNick">—</p>
         <button class="btn outline" type="button" id="logoutBtn" style="margin-top:1rem;font-size:.75rem;padding:.6rem 1.2rem;">Выйти</button>
+        <button class="btn outline" type="button" id="deleteAccountBtn" style="margin-top:.5rem;font-size:.7rem;padding:.5rem 1rem;color:var(--pink);border-color:rgba(232,0,58,.5);">Удалить аккаунт и данные</button>
       </div>
 
       <p class="players-count" style="font-size:0.78rem;">После регистрации нажми «Задонатить» — ник появится в меню «Участники» справа.</p>
@@ -1558,6 +1559,7 @@
     const donorsBadge = document.getElementById('donorsBadge');
     const googleAuthBlock = document.getElementById('googleAuthBlock');
     const googleBtn = document.getElementById('googleBtn');
+    const deleteAccountBtn = document.getElementById('deleteAccountBtn');
     const logoutBtn = document.getElementById('logoutBtn');
     let donorsUnsubscribe = null;
 
@@ -1644,7 +1646,13 @@
 
       const nickDoc = await db.collection('nicks').doc(nickKey).get();
       if (nickDoc.exists) {
-        throw new Error('Этот ник уже занят другим игроком.');
+        const ownerUid = nickDoc.data().uid;
+        const ownerPlayer = await db.collection('players').doc(ownerUid).get();
+        if (!ownerPlayer.exists) {
+          await db.collection('nicks').doc(nickKey).delete();
+        } else if (ownerUid !== user.uid) {
+          throw new Error('Этот ник уже занят другим игроком.');
+        }
       }
 
       const batch = db.batch();
@@ -1662,6 +1670,47 @@
 
       showRegisteredUI(cleanNick);
       showAuthMsg('Ты зарегистрирован! Нажми «Задонатить» — твой ник появится в списке.', 'success');
+    }
+
+    async function deleteUserFirestoreData(uid) {
+      const playerRef = db.collection('players').doc(uid);
+      const playerSnap = await playerRef.get();
+      const batch = db.batch();
+
+      if (playerSnap.exists) {
+        const nick = playerSnap.data().nick;
+        batch.delete(playerRef);
+        if (nick) {
+          batch.delete(db.collection('nicks').doc(String(nick).toLowerCase()));
+        }
+      }
+
+      await batch.commit();
+    }
+
+    async function deleteMyAccount() {
+      if (!auth?.currentUser) return;
+
+      const ok = confirm('Удалить аккаунт, ник и запись в списке участников? Это нельзя отменить.');
+      if (!ok) return;
+
+      deleteAccountBtn.disabled = true;
+      const user = auth.currentUser;
+
+      try {
+        await deleteUserFirestoreData(user.uid);
+        await user.delete();
+        showToast('Аккаунт и данные удалены');
+      } catch (err) {
+        if (err.code === 'auth/requires-recent-login') {
+          showAuthMsg('Войди заново и повтори удаление (нужно подтверждение безопасности).', 'error');
+          showAuthUI();
+          playerStatus.classList.remove('visible');
+        } else {
+          showAuthMsg(err.message || 'Не удалось удалить аккаунт.', 'error');
+        }
+        deleteAccountBtn.disabled = false;
+      }
     }
 
     async function markAsDonated() {
@@ -1791,6 +1840,7 @@
       });
 
       logoutBtn.addEventListener('click', () => auth.signOut());
+      deleteAccountBtn.addEventListener('click', deleteMyAccount);
 
       googleBtn.addEventListener('click', async () => {
         clearAuthMsg();
