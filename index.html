@@ -1,1 +1,1822 @@
-ф
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Игра в Кальмара — Minecraft</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=Inter:wght@300;400;500&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --red: #E8003A;
+      --pink: #FF2D6E;
+      --dark: #0A0A0F;
+      --card: #111118;
+      --border: #1e1e2e;
+      --text: #e8e8f0;
+      --muted: #6b6b8a;
+      --gold: #FFD700;
+      --green: #00C853;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--dark);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    .page-main {
+      position: relative;
+      z-index: 1;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.5;
+    }
+
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(circle, rgba(232, 0, 58, 0.18) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: 1px solid var(--red);
+      border-radius: 999px;
+      padding: 0.35rem 1rem;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--pink);
+      margin-bottom: 2rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-badge span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--red);
+      animation: blink 1.2s ease infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .hero h1 {
+      font-family: 'Unbounded', sans-serif;
+      font-size: clamp(2.4rem, 7vw, 6rem);
+      font-weight: 900;
+      line-height: 1;
+      position: relative;
+      z-index: 1;
+      letter-spacing: -0.02em;
+    }
+
+    .hero h1 em {
+      font-style: normal;
+      color: var(--red);
+      display: block;
+    }
+
+    .version-tag {
+      display: inline-block;
+      background: rgba(0, 200, 83, 0.12);
+      border: 1px solid var(--green);
+      color: var(--green);
+      border-radius: 8px;
+      padding: 0.3rem 0.9rem;
+      font-size: 0.8rem;
+      font-family: 'Unbounded', sans-serif;
+      font-weight: 700;
+      margin-top: 1rem;
+      position: relative;
+      z-index: 1;
+      letter-spacing: 0.05em;
+    }
+
+    .hero-sub {
+      margin-top: 1.2rem;
+      font-size: clamp(0.95rem, 2vw, 1.2rem);
+      color: var(--muted);
+      max-width: 540px;
+      line-height: 1.7;
+      position: relative;
+      z-index: 1;
+    }
+
+    .shapes {
+      display: flex;
+      gap: 2rem;
+      margin-top: 3rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .shape {
+      width: 56px;
+      height: 56px;
+      border: 3px solid var(--red);
+      opacity: 0.7;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .shape.circle { border-radius: 50%; }
+    .shape.triangle {
+      width: 0;
+      height: 0;
+      border-left: 26px solid transparent;
+      border-right: 26px solid transparent;
+      border-bottom: 46px solid var(--red);
+      border-top: none;
+      background: none;
+      opacity: 0.55;
+      animation-delay: 0.4s;
+    }
+    .shape.square { border-radius: 4px; animation-delay: 0.8s; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--muted);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      z-index: 1;
+    }
+
+    .scroll-hint::after {
+      content: '';
+      width: 1px;
+      height: 40px;
+      background: linear-gradient(to bottom, var(--muted), transparent);
+      animation: scrollLine 1.4s ease-in-out infinite;
+    }
+
+    @keyframes scrollLine {
+      0% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(10px); }
+    }
+
+    .prize-banner {
+      background: linear-gradient(135deg, rgba(232, 0, 58, 0.15), rgba(255, 215, 0, 0.08));
+      border: 1px solid var(--red);
+      border-radius: 20px;
+      padding: 2.5rem;
+      margin: 0 auto;
+      max-width: 1000px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .prize-banner::before {
+      content: '';
+      position: absolute;
+      top: -80px;
+      right: -80px;
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(255, 215, 0, 0.1), transparent 70%);
+      pointer-events: none;
+    }
+
+    .prize-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .prize-item { text-align: center; }
+    .prize-item .big {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--gold);
+      display: block;
+      line-height: 1;
+    }
+    .prize-item .label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.4rem;
+      line-height: 1.5;
+    }
+    .prize-note {
+      margin-top: 1.5rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+      line-height: 1.7;
+    }
+    .prize-note strong { color: var(--text); }
+
+    section {
+      padding: 5rem 1.5rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--red);
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-family: 'Unbounded', sans-serif;
+      font-size: clamp(1.6rem, 4vw, 2.8rem);
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 1.2rem;
+    }
+
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--border), transparent);
+    }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.2rem;
+      margin-top: 3rem;
+    }
+
+    .about-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 1.5rem;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+    .about-card:hover {
+      border-color: var(--red);
+      transform: translateY(-4px);
+    }
+    .about-card .icon { font-size: 2rem; margin-bottom: 1rem; }
+    .about-card h3 {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+    }
+    .about-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .steps {
+      margin-top: 3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 56px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.8rem;
+      transition: border-color 0.3s;
+    }
+    .step:hover { border-color: var(--red); }
+    .step-num {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      background: rgba(232, 0, 58, 0.12);
+      border: 1px solid var(--red);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Unbounded', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--red);
+      flex-shrink: 0;
+    }
+    .step h3 {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 1rem;
+      margin-bottom: 0.4rem;
+    }
+    .step p {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .network-box {
+      margin-top: 2rem;
+      background: var(--card);
+      border: 1px solid var(--red);
+      border-radius: 20px;
+      padding: 2.5rem;
+      position: relative;
+      overflow: hidden;
+      display: none;
+      animation: fadeIn 0.5s ease;
+    }
+
+    .network-box.visible { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .network-box::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(232, 0, 58, 0.15), transparent 70%);
+      pointer-events: none;
+    }
+
+    .net-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .net-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      margin-bottom: 0.3rem;
+    }
+
+    .net-value {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.6rem 1.2rem;
+      display: inline-block;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: border-color 0.3s;
+    }
+
+    .net-value.password { color: var(--gold); border-color: rgba(255, 215, 0, 0.3); }
+    .net-value:hover { border-color: var(--red); }
+
+    .mods-reveal {
+      margin-top: 2rem;
+      background: var(--card);
+      border: 1px solid var(--green);
+      border-radius: 20px;
+      padding: 2rem 2.5rem;
+      display: none;
+      animation: fadeIn 0.5s ease;
+    }
+
+    .mods-reveal.visible { display: block; }
+    .mods-reveal h3 {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 1rem;
+      color: var(--green);
+      margin-bottom: 0.8rem;
+    }
+    .mods-reveal p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.65;
+      margin-bottom: 1.2rem;
+    }
+
+    .donate-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2.5rem;
+      margin-top: 3rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .donate-box::before {
+      content: '';
+      position: absolute;
+      top: -50px;
+      left: -50px;
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, rgba(0, 200, 83, 0.1), transparent 70%);
+      pointer-events: none;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: var(--red);
+      color: #fff;
+      font-family: 'Unbounded', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-decoration: none;
+      padding: 0.9rem 2rem;
+      border-radius: 999px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: none;
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+
+    .btn:hover {
+      transform: scale(1.04);
+      box-shadow: 0 0 30px rgba(232, 0, 58, 0.45);
+    }
+
+    .btn.outline {
+      background: transparent;
+      border: 2px solid var(--red);
+      color: var(--red);
+    }
+    .btn.outline:hover { background: rgba(232, 0, 58, 0.1); }
+
+    .btn.green {
+      background: var(--green);
+    }
+    .btn.green:hover { box-shadow: 0 0 30px rgba(0, 200, 83, 0.4); }
+
+    .btn.gold {
+      background: linear-gradient(135deg, #FFD700, #FFA000);
+      color: #000;
+    }
+    .btn.gold:hover { box-shadow: 0 0 30px rgba(255, 215, 0, 0.4); }
+
+    .btn.telegram {
+      background: #229ED9;
+    }
+
+    .btn.telegram:hover {
+      box-shadow: 0 0 30px rgba(34, 158, 217, 0.45);
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      margin-top: 1rem;
+    }
+
+    .btn-row .btn { margin-top: 0; }
+
+    .timer-box {
+      background: var(--card);
+      border: 2px solid var(--gold);
+      border-radius: 20px;
+      padding: 2rem;
+      text-align: center;
+      margin-top: 2rem;
+    }
+
+    .timer-box .label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+    }
+
+    .timer {
+      font-family: 'Unbounded', sans-serif;
+      font-size: clamp(2rem, 5vw, 4rem);
+      font-weight: 900;
+      color: var(--gold);
+      margin-top: 0.5rem;
+      letter-spacing: 0.05em;
+    }
+
+    .rules-list {
+      list-style: none;
+      padding: 0;
+      margin-top: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .rules-list li {
+      padding: 1rem 1.5rem;
+      background: var(--card);
+      border-left: 3px solid var(--red);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .rules-list li strong { color: var(--text); }
+
+    .faq-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.2rem 1.5rem;
+      margin-top: 0.8rem;
+      transition: border-color 0.3s;
+      cursor: pointer;
+    }
+
+    .faq-item:hover { border-color: var(--red); }
+    .faq-item .question {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .faq-item .question .arrow {
+      transition: transform 0.3s;
+      color: var(--muted);
+    }
+
+    .faq-item .answer {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-top: 0.8rem;
+      display: none;
+    }
+
+    .faq-item.open .answer { display: block; }
+    .faq-item.open .arrow { transform: rotate(180deg); }
+
+    .copy-toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--green);
+      color: #000;
+      font-weight: 700;
+      padding: 0.8rem 2rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      opacity: 0;
+      transition: opacity 0.4s;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    .copy-toast.show { opacity: 1; }
+
+    .audio-control {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.5rem;
+    }
+
+    .audio-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 2px solid var(--red);
+      background: var(--card);
+      color: var(--text);
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .audio-btn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 0 20px rgba(232, 0, 58, 0.35);
+    }
+
+    .audio-hint {
+      font-size: 0.65rem;
+      color: var(--muted);
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 0.35rem 0.7rem;
+      border-radius: 8px;
+      letter-spacing: 0.05em;
+      animation: fadeIn 0.5s ease;
+    }
+
+    .auth-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2.5rem;
+      margin-top: 2rem;
+      max-width: 480px;
+    }
+
+    .auth-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 0.7rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'Unbounded', sans-serif;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .auth-tab.active {
+      border-color: var(--red);
+      color: var(--red);
+      background: rgba(232, 0, 58, 0.08);
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .auth-form label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: -0.5rem;
+    }
+
+    .auth-form input {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .auth-form input:focus { border-color: var(--red); }
+
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: var(--muted);
+      font-size: 0.75rem;
+      margin: 0.25rem 0;
+    }
+
+    .auth-divider::before,
+    .auth-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .btn.google {
+      background: #fff;
+      color: #1f1f1f;
+      width: 100%;
+      justify-content: center;
+      font-size: 0.8rem;
+    }
+
+    .btn.google:hover {
+      box-shadow: 0 0 24px rgba(255, 255, 255, 0.15);
+    }
+
+    .btn.google svg {
+      flex-shrink: 0;
+    }
+
+    .auth-msg {
+      font-size: 0.85rem;
+      padding: 0.8rem 1rem;
+      border-radius: 10px;
+      line-height: 1.5;
+      display: none;
+    }
+
+    .auth-msg.error {
+      display: block;
+      background: rgba(232, 0, 58, 0.12);
+      border: 1px solid var(--red);
+      color: var(--pink);
+    }
+
+    .auth-msg.success {
+      display: block;
+      background: rgba(0, 200, 83, 0.12);
+      border: 1px solid var(--green);
+      color: var(--green);
+    }
+
+    .auth-msg.info {
+      display: block;
+      background: rgba(255, 215, 0, 0.08);
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      color: var(--gold);
+    }
+
+    .player-status {
+      margin-top: 1.5rem;
+      padding: 1.2rem 1.5rem;
+      background: rgba(0, 200, 83, 0.08);
+      border: 1px solid var(--green);
+      border-radius: 12px;
+      display: none;
+    }
+
+    .player-status.visible { display: block; }
+
+    .player-status .nick {
+      font-family: 'Unbounded', sans-serif;
+      color: var(--green);
+      font-size: 1.1rem;
+    }
+
+    .players-count {
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .players-count strong { color: var(--gold); }
+
+    .donors-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      z-index: 148;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .donors-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .donors-toggle {
+      position: fixed;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 151;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.85rem 0.5rem;
+      border: 1px solid var(--border);
+      border-right: none;
+      border-radius: 14px 0 0 14px;
+      background: var(--card);
+      color: var(--gold);
+      cursor: pointer;
+      font-family: 'Unbounded', sans-serif;
+      font-size: 0.62rem;
+      letter-spacing: 0.04em;
+      line-height: 1.2;
+      transition: right 0.3s ease, background 0.2s;
+      box-shadow: -4px 0 24px rgba(0, 0, 0, 0.35);
+    }
+
+    .donors-toggle:hover {
+      background: #1a1a24;
+    }
+
+    .donors-toggle.open {
+      right: 270px;
+    }
+
+    .donors-toggle-icon {
+      font-size: 1.1rem;
+    }
+
+    .donors-badge {
+      background: var(--red);
+      color: #fff;
+      font-size: 0.65rem;
+      min-width: 1.35rem;
+      padding: 0.1rem 0.35rem;
+      border-radius: 999px;
+      text-align: center;
+    }
+
+    .donors-sidebar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 270px;
+      height: 100vh;
+      padding: 2.5rem 1rem 1.25rem;
+      border-left: 1px solid var(--border);
+      background: rgba(10, 10, 15, 0.97);
+      backdrop-filter: blur(12px);
+      z-index: 150;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .donors-sidebar.open {
+      transform: translateX(0);
+    }
+
+    .donors-close {
+      position: absolute;
+      top: 0.7rem;
+      right: 0.7rem;
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .donors-close:hover {
+      border-color: var(--red);
+      color: var(--text);
+    }
+
+    .donors-sidebar .section-label {
+      margin-bottom: 0.6rem;
+    }
+
+    .donors-sidebar h3 {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+      line-height: 1.3;
+    }
+
+    .donors-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .donors-list li {
+      background: rgba(255, 215, 0, 0.08);
+      border: 1px solid rgba(255, 215, 0, 0.28);
+      color: var(--gold);
+      font-family: 'Unbounded', sans-serif;
+      font-size: 0.72rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 10px;
+      word-break: break-word;
+    }
+
+    .donors-list .empty {
+      color: var(--muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      border: none;
+      background: none;
+      padding: 0;
+      line-height: 1.5;
+    }
+
+    .donors-sidebar .players-count {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .tg-sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding: 0.75rem;
+      border-radius: 12px;
+      border: 1px solid rgba(34, 158, 217, 0.35);
+      background: rgba(34, 158, 217, 0.1);
+      color: #5ecbff;
+      text-decoration: none;
+      font-size: 0.78rem;
+      font-weight: 500;
+      line-height: 1.4;
+      transition: border-color 0.2s, background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .tg-sidebar-link:hover {
+      border-color: #229ED9;
+      background: rgba(34, 158, 217, 0.18);
+    }
+
+    footer {
+      text-align: center;
+      padding: 3rem 1.5rem;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.8;
+    }
+
+    footer strong { color: var(--red); }
+
+    @media (max-width: 600px) {
+      .step { grid-template-columns: 1fr; }
+      .prize-item .big { font-size: 1.5rem; }
+      .net-row { flex-direction: column; align-items: flex-start; }
+      .shapes { gap: 1.2rem; }
+      .btn-row { flex-direction: column; align-items: stretch; }
+      .btn-row .btn { justify-content: center; }
+      .donors-sidebar { width: min(270px, 88vw); }
+      .donors-toggle.open { right: min(270px, 88vw); }
+    }
+  </style>
+</head>
+<body>
+
+  <audio id="bgMusic" loop preload="auto">
+    <source src="-kompoziciya-rozovye-soldaty.mp3" type="audio/mpeg">
+  </audio>
+
+  <div class="audio-control">
+    <span class="audio-hint" id="audioHint">🔇 Нажми для звука</span>
+    <button class="audio-btn" id="audioBtn" type="button" aria-label="Звук">🔇</button>
+  </div>
+
+  <div class="copy-toast" id="toast">✅ Скопировано!</div>
+
+  <div class="page-main">
+
+  <header class="hero">
+    <div class="hero-badge"><span></span> Minecraft 1.16.5 · Игра</div>
+    <h1>Игра<br>в Кальмара <em>Minecraft</em></h1>
+    <div class="version-tag">⛏ Версия: Minecraft Java Forge 1.16.5</div>
+    <p class="hero-sub">Выживи. Победи. Стань единственным. Эпический ивент по вселенной «Игры в кальмара» прямо в Minecraft.</p>
+    <a class="btn telegram" href="https://t.me/Squid_Gameess" target="_blank" rel="noopener" style="margin-top:1.5rem;position:relative;z-index:1;">✈ Telegram-канал</a>
+    <div class="shapes">
+      <div class="shape circle"></div>
+      <div class="shape triangle"></div>
+      <div class="shape square"></div>
+    </div>
+    <div class="scroll-hint">ПРОКРУТИ ВНИЗ</div>
+  </header>
+
+  <div class="divider"></div>
+
+  <section>
+    <div class="timer-box">
+      <p class="label">⏳ До начала ивента</p>
+      <div class="timer" id="timer">--:--:--</div>
+      <p style="color:var(--muted);font-size:0.8rem;margin-top:0.8rem;">Не опоздай — игра начнётся ровно в 20:00 МСК</p>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section>
+    <div class="prize-banner">
+      <p class="section-label">💰 Призовой фонд</p>
+      <h2 class="section-title">Победитель забирает всё</h2>
+      <div class="prize-grid">
+        <div class="prize-item">
+          <span class="big">100₽</span>
+          <span class="label">Взнос за участие<br>от каждого игрока</span>
+        </div>
+        <div class="prize-item">
+          <span class="big">🏆</span>
+          <span class="label">Весь призовой фонд<br>уходит победителю</span>
+        </div>
+        <div class="prize-item">
+          <span class="big" style="color:var(--red);">10%</span>
+          <span class="label">Отчисление охранникам<br>и Фронтмэну от выигрыша</span>
+        </div>
+      </div>
+      <div class="prize-note">
+        ⚠️ <strong>Пример:</strong> 20 игроков × 100₽ = 2000₽ в общем фонде. Победитель получает <strong>1800₽</strong>, а 200₽ идут организаторам (охранники + Фронтмэн). Донат добровольный — участвуй осознанно!
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section id="about">
+    <p class="section-label">О проекте</p>
+    <h2 class="section-title">Что тебя ждёт?</h2>
+    <p style="color:var(--muted);line-height:1.75;max-width:600px;">Классические испытания из сериала воссозданы в Minecraft 1.16.5. Зелёный свет — Красный свет, Соты, Перетягивание каната и другие смертельные игры ждут тебя.</p>
+    <div class="about-grid">
+      <div class="about-card">
+        <div class="icon">🦑</div>
+        <h3>Соревнования</h3>
+        <p>Испытания по мотивам оригинального сериала с полной атмосферой.</p>
+      </div>
+      <div class="about-card">
+        <div class="icon">⚔️</div>
+        <h3>PvP-режимы</h3>
+        <p>Сражайся с другими игроками в напряжённых мини-играх.</p>
+      </div>
+      <div class="about-card">
+        <div class="icon">🏆</div>
+        <h3>Победитель один</h3>
+        <p>Только самый хитрый и ловкий доберётся до финала и заберёт призовой фонд.</p>
+      </div>
+      <div class="about-card">
+        <div class="icon">🌐</div>
+        <h3>Через Radmin VPN</h3>
+        <p>Играем через защищённую виртуальную сеть — просто и быстро.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section id="mods">
+    <p class="section-label">Установка</p>
+    <h2 class="section-title">Нужные моды</h2>
+    <p style="color:var(--muted);line-height:1.75;max-width:600px;margin-bottom:1.5rem;">Для участия в ивенте необходимо установить специальные моды. Нажми кнопку ниже — откроется папка с модами на Mega. Скачай все файлы и помести их в папку <code style="background:rgba(255,255,255,.07);padding:.1rem .5rem;border-radius:6px;font-size:.85rem;">.minecraft/mods</code>.</p>
+
+    <a class="btn green" href="https://mega.nz/folder/AetizYwA#B1YHMNwSRxmnd28azOr4vw" target="_blank" rel="noopener" onclick="toggleMods()">📦 Скачать моды</a>
+
+    <div class="mods-reveal" id="modsReveal">
+      <h3>✅ Ссылка на моды готова!</h3>
+      <p>Перейди по ссылке ниже, скачай все файлы из папки и помести их в <code style="background:rgba(255,255,255,.07);padding:.1rem .5rem;border-radius:6px;">.minecraft/mods</code>. Версия Minecraft: <strong style="color:var(--green);">1.16.5 Java Edition</strong>.</p>
+      <a class="btn green" href="https://mega.nz/folder/AetizYwA#B1YHMNwSRxmnd28azOr4vw" target="_blank" rel="noopener" style="margin-top:0;">
+        ↗ Открыть папку с модами на Mega
+      </a>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section id="how">
+    <p class="section-label">Инструкция</p>
+    <h2 class="section-title">Как подключиться?</h2>
+    <p style="color:var(--muted);line-height:1.75;max-width:600px;margin-bottom:.5rem;">Всего 4 шага — и ты в игре.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div>
+          <h3>Скачай Radmin VPN</h3>
+          <p>Перейди на официальный сайт Radmin VPN и скачай бесплатную программу. Установи её — займёт меньше минуты.</p>
+          <a class="btn outline" href="https://www.radmin-vpn.com/" target="_blank" rel="noopener" style="margin-top:1rem;font-size:.75rem;padding:.7rem 1.4rem;">↗ Скачать Radmin VPN</a>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div>
+          <h3>Войди в сеть</h3>
+          <p>Открой Radmin VPN → нажми <strong>«Присоединиться к сети»</strong> → введи название сети и пароль. Данные появятся после оплаты доната ниже.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div>
+          <h3>Установи моды и открой Minecraft</h3>
+          <p>Скачай моды из раздела выше, запусти Minecraft <strong>Java 1.16.5</strong>. Перейди в <strong>«Сетевая игра»</strong> → <strong>«Прямое подключение»</strong> и введи IP хоста.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div>
+          <h3>Играй!</h3>
+          <p>Следи за командами организатора, соблюдай правила и выживи дольше всех. Удачи, участник 456.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section>
+    <p class="section-label">📜 Правила</p>
+    <h2 class="section-title">Что можно и что нельзя</h2>
+    <ul class="rules-list">
+      <li><strong>✅ Можно:</strong> Использовать любую тактику, прятаться, обманывать, перехитрять соперников.</li>
+      <li><strong>❌ Нельзя:</strong> Использовать читы, баги, выходить из игры во время раунда, мешать другим игрокам физически.</li>
+      <li><strong>⚖️ Наказание:</strong> За нарушение — дисквалификация без возврата взноса.</li>
+      <li><strong>📢 Команды:</strong> Слушайся организатора (Фронтмэна) — его слово закон.</li>
+      <li><strong>🏆 Победитель:</strong> Остаётся только один. Все решения организатора окончательны.</li>
+    </ul>
+  </section>
+
+  <div class="divider"></div>
+
+  <section id="register">
+    <p class="section-label">Регистрация</p>
+    <h2 class="section-title">Запишись в список участников</h2>
+    <p style="color:var(--muted);line-height:1.75;max-width:620px;">
+      Создай аккаунт и укажи свой Minecraft-ник. <strong style="color:var(--text);">Один аккаунт — одна регистрация.</strong>
+      После записи в список задонать 100₽ и подключиться к сети.
+    </p>
+
+    <div class="auth-box" id="authBox">
+      <div class="auth-tabs">
+        <button class="auth-tab active" type="button" data-tab="login">Вход</button>
+        <button class="auth-tab" type="button" data-tab="signup">Регистрация</button>
+      </div>
+
+      <div class="auth-msg" id="authMsg"></div>
+
+      <div id="googleAuthBlock">
+        <button class="btn google" type="button" id="googleBtn">
+          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.223 36 24 36c-5.522 0-10-4.477-10-10s4.478-10 10-10c2.837 0 5.402 1.193 7.207 3.093l5.657-5.657C33.64 10.893 29.028 9 24 9 14.059 9 6 17.059 6 27s8.059 18 18 18 18-8.059 18-18c0-1.214-.124-2.396-.389-3.583z"/><path fill="#FF3D00" d="M6 27c0-1.214.124-2.396.389-3.583l7.207 5.593C13.398 31.798 13 29.405 13 27s.398-4.798 1.596-6.407L7.389 15.017C6.512 17.396 6 19.637 6 22v5z"/><path fill="#4CAF50" d="M24 44c4.837 0 8.954-1.603 11.93-4.357l-5.515-4.664C28.398 36.798 26.332 37.5 24 37.5c-5.202 0-9.619-3.317-11.283-7.946l-7.207 5.593C8.064 41.556 15.478 46 24 46z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 5.515 4.664C36.454 39.603 44 36 44 27c0-1.214-.124-2.396-.389-3.583z"/></svg>
+          Войти через Google
+        </button>
+        <div class="auth-divider">или</div>
+      </div>
+
+      <form class="auth-form" id="authForm">
+        <label for="authEmail">Email</label>
+        <input type="email" id="authEmail" placeholder="player@mail.ru" required autocomplete="email">
+
+        <label for="authPassword">Пароль</label>
+        <input type="password" id="authPassword" placeholder="Минимум 6 символов" required minlength="6" autocomplete="current-password">
+
+        <div id="nickField" style="display:none;">
+          <label for="authNick">Minecraft-ник</label>
+          <input type="text" id="authNick" placeholder="Steve" maxlength="16" pattern="[a-zA-Z0-9_]{2,16}" title="2–16 символов: буквы, цифры, _">
+        </div>
+
+        <button class="btn" type="submit" id="authSubmit">Войти</button>
+      </form>
+
+      <div class="player-status" id="playerStatus">
+        <p style="font-size:0.8rem;color:var(--muted);">Ты в списке участников:</p>
+        <p class="nick" id="playerNick">—</p>
+        <button class="btn outline" type="button" id="logoutBtn" style="margin-top:1rem;font-size:.75rem;padding:.6rem 1.2rem;">Выйти</button>
+      </div>
+
+      <p class="players-count" style="font-size:0.78rem;">После регистрации нажми «Задонатить» — ник появится в меню «Участники» справа.</p>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section id="join">
+    <p class="section-label">Участие</p>
+    <h2 class="section-title">Хочешь сыграть?</h2>
+    <p style="color:var(--muted);line-height:1.75;max-width:620px;">
+      Поддержи ивент донатом 100₽ — после этого откроются данные для подключения к сети Radmin VPN.
+      <strong style="color:var(--text);">При донате укажи свой ник в строке «Анонимно»</strong>, чтобы мы знали, кто ты.
+    </p>
+
+    <div class="donate-box">
+      <p class="section-label" style="margin-bottom:1rem;">Шаг 1 — Задонать 100₽</p>
+      <a class="btn gold" href="https://dalink.to/thekellix" target="_blank" rel="noopener" id="donateBtn" onclick="handleDonateClick(event)">💳 Задонатить 100₽ (укажи ник)</a>
+
+      <p class="section-label" style="margin-top:2rem;margin-bottom:.5rem;">Шаг 2 — Получить доступ</p>
+      <p style="color:var(--muted);font-size:.85rem;line-height:1.65;max-width:500px;">После доната нажми кнопку ниже — появятся данные для входа в сеть Radmin VPN.</p>
+
+      <div class="btn-row">
+        <button class="btn" onclick="revealNetwork()">🔓 Я задонатил — показать данные сети(если нет и просто зайдешь то получишь бан)</button>
+      </div>
+
+      <div class="network-box" id="networkBox">
+        <p class="section-label" style="margin-bottom:1.5rem;">✅ Данные для подключения</p>
+        <div class="net-row">
+          <div>
+            <p class="net-label">Название сети</p>
+            <span class="net-value" onclick="copyText('SquirdGameees')">SquirdGameees</span>
+          </div>
+          <div>
+            <p class="net-label">Пароль</p>
+            <span class="net-value password" onclick="copyText('14885242')">14885242</span>
+          </div>
+        </div>
+        <div style="margin-top:1rem;">
+          <button class="btn outline" onclick="copyAll()" style="font-size:0.7rem;padding:0.5rem 1.2rem;">📋 Скопировать всё (сеть + пароль)</button>
+        </div>
+        <p style="font-size:.8rem;color:var(--muted);margin-top:.8rem;">⚠️ Не передавай данные посторонним. Только для участников ивента.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section>
+    <p class="section-label">❓ FAQ</p>
+    <h2 class="section-title">Часто задаваемые вопросы</h2>
+
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="question">
+        Что если я не выиграю?
+        <span class="arrow">▼</span>
+      </div>
+      <div class="answer">Ты получишь незабываемый опыт и эмоции. Кроме того, все участники остаются в общем чате и могут играть в будущих ивентах со скидкой.</div>
+    </div>
+
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="question">
+        Можно ли играть с другом?
+        <span class="arrow">▼</span>
+      </div>
+      <div class="answer">Да, но помни — в финале останется только один победитель. Дружба дружбой, а призовой фонд — призовым фондом.</div>
+    </div>
+
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="question">
+        Что если я опоздаю к старту?
+        <span class="arrow">▼</span>
+      </div>
+      <div class="answer">Если ты опоздал больше чем на 5 минут — ты не попадёшь в игру, но взнос возвращается (в течение 24 часов).</div>
+    </div>
+
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="question">
+        Нужно ли включать микрофон?
+        <span class="arrow">▼</span>
+      </div>
+      <div class="answer">Не обязательно, но желательно — чтобы слышать команды организатора. Мы используем Discord или внутриигровой чат.</div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section style="text-align:center;">
+    <p class="section-label">Готов?</p>
+    <h2 class="section-title">Начни игру прямо сейчас</h2>
+    <p style="color:var(--muted);line-height:1.75;max-width:480px;margin:0 auto;">Скачай моды, задонать, подключись к сети и жди старта. Выживший получит всё.</p>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;margin-top:1.5rem;">
+      <a class="btn green" href="https://mega.nz/folder/AetizYwA#B1YHMNwSRxmnd28azOr4vw" target="_blank" rel="noopener">📦 Скачать моды</a>
+      <a class="btn" href="https://www.radmin-vpn.com/" target="_blank" rel="noopener">↗ Radmin VPN</a>
+      <a class="btn telegram" href="https://t.me/Squid_Gameess" target="_blank" rel="noopener">✈ Telegram</a>
+    </div>
+  </section>
+
+  <footer>
+    <p>Игра в Кальмара Minecraft · Версия 1.16.5 · Неофициальный фан-проект</p>
+    <p>Донат добровольный · 10% от выигрыша — организаторам</p>
+    <p style="margin-top:.8rem;"><a href="https://t.me/Squid_Gameess" target="_blank" rel="noopener" style="color:#5ecbff;text-decoration:none;">✈ Telegram: @Squid_Gameess</a></p>
+    <p style="margin-top:.5rem;font-size:.72rem;">Minecraft — торговая марка Mojang Studios. Игра в Кальмара — Netflix.</p>
+  </footer>
+
+  </div>
+
+  <div class="donors-overlay" id="donorsOverlay"></div>
+
+  <button type="button" class="donors-toggle" id="donorsToggle" aria-expanded="false" aria-controls="donorsSidebar">
+    <span class="donors-toggle-icon">👥</span>
+    <span class="donors-toggle-text">Участники</span>
+    <span class="donors-badge" id="donorsBadge">0</span>
+  </button>
+
+  <aside class="donors-sidebar" id="donorsSidebar">
+    <button type="button" class="donors-close" id="donorsClose" aria-label="Закрыть">✕</button>
+    <p class="section-label">Участники</p>
+    <h3>Кто задонатил</h3>
+    <ul class="donors-list" id="donorsList">
+      <li class="empty">Пока никого нет — будь первым!</li>
+    </ul>
+    <p class="players-count">Всего: <strong id="donorsCount">0</strong></p>
+    <a class="tg-sidebar-link" href="https://t.me/Squid_Gameess" target="_blank" rel="noopener">
+      ✈ Наш Telegram-канал
+    </a>
+  </aside>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    // ⚠️ Замени на свои данные из Firebase Console → Project Settings → Your apps
+    const firebaseConfig = {
+      apiKey: "AIzaSyAp_kOzj1kM47sw3aZ2jXE-jstWygfNf8M",
+      authDomain: "squidgame-a1646.firebaseapp.com",
+      projectId: "squidgame-a1646",
+      storageBucket: "squidgame-a1646.firebasestorage.app",
+      messagingSenderId: "490754717759",
+      appId: "1:490754717759:web:1b4457ecd84b699681e08a",
+      measurementId: "G-7S2W317NNH"
+    };
+
+    const firebaseReady = firebaseConfig.apiKey && !firebaseConfig.apiKey.includes('ВАШ');
+    let auth = null;
+    let db = null;
+    let authMode = 'login';
+
+    if (firebaseReady) {
+      firebase.initializeApp(firebaseConfig);
+      auth = firebase.auth();
+      db = firebase.firestore();
+    }
+
+    // ——— Фоновая музыка ———
+    const bgMusic = document.getElementById('bgMusic');
+    const audioBtn = document.getElementById('audioBtn');
+    const audioHint = document.getElementById('audioHint');
+    let musicPlaying = false;
+
+    bgMusic.volume = 0.35;
+
+    function updateAudioUI() {
+      audioBtn.textContent = musicPlaying ? '🔊' : '🔇';
+      audioHint.style.display = musicPlaying ? 'none' : 'block';
+    }
+
+    async function tryPlayMusic(unmute) {
+      try {
+        if (unmute) bgMusic.muted = false;
+        await bgMusic.play();
+        musicPlaying = !bgMusic.muted;
+        updateAudioUI();
+      } catch (_) {
+        musicPlaying = false;
+        updateAudioUI();
+      }
+    }
+
+    bgMusic.muted = true;
+    tryPlayMusic(false);
+
+    audioBtn.addEventListener('click', () => {
+      if (musicPlaying) {
+        bgMusic.pause();
+        musicPlaying = false;
+      } else {
+        tryPlayMusic(true);
+      }
+      updateAudioUI();
+    });
+
+    document.addEventListener('click', function unmuteOnce() {
+      if (!musicPlaying) tryPlayMusic(true);
+      document.removeEventListener('click', unmuteOnce);
+    }, { once: true });
+
+    // ——— Таймер (МСК, UTC+3) ———
+    function startTimer() {
+      function getMoscowNow() {
+        return new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Moscow' }));
+      }
+
+      function getNextMoscowTarget() {
+        const now = getMoscowNow();
+        const target = new Date(now);
+        target.setHours(20, 0, 0, 0);
+        if (now >= target) target.setDate(target.getDate() + 1);
+        return target;
+      }
+
+      let target = getNextMoscowTarget();
+
+      function update() {
+        const now = getMoscowNow();
+        if (now >= target) target = getNextMoscowTarget();
+        const diff = Math.max(0, Math.floor((target - now) / 1000));
+        const h = String(Math.floor(diff / 3600)).padStart(2, '0');
+        const m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
+        const s = String(diff % 60).padStart(2, '0');
+        document.getElementById('timer').textContent = `${h}:${m}:${s}`;
+      }
+      update();
+      setInterval(update, 1000);
+    }
+    startTimer();
+
+    function toggleMods() {
+      document.getElementById('modsReveal').classList.add('visible');
+    }
+
+    function revealNetwork() {
+      markAsDonated().then((ok) => {
+        if (!ok) return;
+        const box = document.getElementById('networkBox');
+        box.classList.add('visible');
+        setTimeout(() => box.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+      });
+    }
+
+    async function handleDonateClick(e) {
+      if (!auth || !auth.currentUser) {
+        e.preventDefault();
+        showToast('Сначала зарегистрируйся!');
+        document.getElementById('register').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      const ok = await markAsDonated();
+      if (!ok) e.preventDefault();
+    }
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (_) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      showToast('✅ Скопировано: ' + text);
+    }
+
+    async function copyAll() {
+      await copyText('SquirdGameees\n14885242');
+      showToast('✅ Скопировано: сеть + пароль');
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(t._timeout);
+      t._timeout = setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    function toggleFaq(el) {
+      el.classList.toggle('open');
+    }
+
+    // ——— Выдвижная панель участников ———
+    const donorsSidebar = document.getElementById('donorsSidebar');
+    const donorsToggle = document.getElementById('donorsToggle');
+    const donorsOverlay = document.getElementById('donorsOverlay');
+    const donorsClose = document.getElementById('donorsClose');
+
+    function toggleDonorsPanel(open) {
+      const isOpen = typeof open === 'boolean' ? open : !donorsSidebar.classList.contains('open');
+      donorsSidebar.classList.toggle('open', isOpen);
+      donorsToggle.classList.toggle('open', isOpen);
+      donorsOverlay.classList.toggle('visible', isOpen);
+      donorsToggle.setAttribute('aria-expanded', isOpen);
+    }
+
+    donorsToggle.addEventListener('click', () => toggleDonorsPanel());
+    donorsClose.addEventListener('click', () => toggleDonorsPanel(false));
+    donorsOverlay.addEventListener('click', () => toggleDonorsPanel(false));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') toggleDonorsPanel(false);
+    });
+
+    // ——— Firebase Auth & регистрация ———
+    const authForm = document.getElementById('authForm');
+    const authMsg = document.getElementById('authMsg');
+    const nickField = document.getElementById('nickField');
+    const authSubmit = document.getElementById('authSubmit');
+    const playerStatus = document.getElementById('playerStatus');
+    const playerNick = document.getElementById('playerNick');
+    const donorsListEl = document.getElementById('donorsList');
+    const donorsCountEl = document.getElementById('donorsCount');
+    const donorsBadge = document.getElementById('donorsBadge');
+    const googleAuthBlock = document.getElementById('googleAuthBlock');
+    const googleBtn = document.getElementById('googleBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    let donorsUnsubscribe = null;
+
+    function showAuthMsg(text, type) {
+      authMsg.textContent = text;
+      authMsg.className = 'auth-msg ' + type;
+    }
+
+    function clearAuthMsg() {
+      authMsg.className = 'auth-msg';
+      authMsg.textContent = '';
+    }
+
+    function setAuthMode(mode) {
+      authMode = mode;
+      document.querySelectorAll('.auth-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.tab === mode);
+      });
+      nickField.style.display = mode === 'signup' || mode === 'complete' ? 'block' : 'none';
+      authSubmit.textContent = mode === 'signup' ? 'Зарегистрироваться' : mode === 'complete' ? 'Записаться в список' : 'Войти';
+      document.getElementById('authNick').required = mode === 'signup' || mode === 'complete';
+      document.getElementById('authEmail').required = mode !== 'complete';
+      document.getElementById('authPassword').required = mode !== 'complete';
+      const emailLabel = document.querySelector('label[for="authEmail"]');
+      const passLabel = document.querySelector('label[for="authPassword"]');
+      const showCreds = mode !== 'complete';
+      emailLabel.style.display = showCreds ? '' : 'none';
+      document.getElementById('authEmail').style.display = showCreds ? '' : 'none';
+      passLabel.style.display = showCreds ? '' : 'none';
+      document.getElementById('authPassword').style.display = showCreds ? '' : 'none';
+      if (googleAuthBlock) googleAuthBlock.style.display = mode === 'complete' ? 'none' : 'block';
+      clearAuthMsg();
+    }
+
+    document.querySelectorAll('.auth-tab').forEach(tab => {
+      tab.addEventListener('click', () => setAuthMode(tab.dataset.tab));
+    });
+
+    function showRegisteredUI(nick) {
+      authForm.style.display = 'none';
+      document.querySelector('.auth-tabs').style.display = 'none';
+      if (googleAuthBlock) googleAuthBlock.style.display = 'none';
+      playerStatus.classList.add('visible');
+      playerNick.textContent = nick;
+    }
+
+    function showAuthUI() {
+      authForm.style.display = 'flex';
+      document.querySelector('.auth-tabs').style.display = 'flex';
+      if (googleAuthBlock) googleAuthBlock.style.display = 'block';
+      playerStatus.classList.remove('visible');
+      document.querySelector('label[for="authEmail"]').style.display = '';
+      document.getElementById('authEmail').style.display = '';
+      document.querySelector('label[for="authPassword"]').style.display = '';
+      document.getElementById('authPassword').style.display = '';
+    }
+
+    async function checkPlayerRegistration(user) {
+      if (!db) return;
+      const doc = await db.collection('players').doc(user.uid).get();
+      if (doc.exists) {
+        showRegisteredUI(doc.data().nick);
+      } else {
+        showAuthUI();
+        document.querySelector('.auth-tabs').style.display = 'none';
+        setAuthMode('complete');
+        showAuthMsg('Укажи Minecraft-ник, чтобы записаться в список участников.', 'info');
+      }
+    }
+
+    async function registerPlayer(user, nick) {
+      const cleanNick = nick.trim();
+      const nickKey = cleanNick.toLowerCase();
+
+      if (!/^[a-zA-Z0-9_]{2,16}$/.test(cleanNick)) {
+        throw new Error('Ник: 2–16 символов, только буквы, цифры и _');
+      }
+
+      const existing = await db.collection('players').doc(user.uid).get();
+      if (existing.exists) {
+        showRegisteredUI(existing.data().nick);
+        throw new Error('Ты уже зарегистрирован в списке!');
+      }
+
+      const nickDoc = await db.collection('nicks').doc(nickKey).get();
+      if (nickDoc.exists) {
+        throw new Error('Этот ник уже занят другим игроком.');
+      }
+
+      const batch = db.batch();
+      batch.set(db.collection('players').doc(user.uid), {
+        nick: cleanNick,
+        email: user.email,
+        donated: false,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      batch.set(db.collection('nicks').doc(nickKey), {
+        uid: user.uid,
+        nick: cleanNick
+      });
+      await batch.commit();
+
+      showRegisteredUI(cleanNick);
+      showAuthMsg('Ты зарегистрирован! Нажми «Задонатить» — твой ник появится в списке.', 'success');
+    }
+
+    async function markAsDonated() {
+      if (!auth || !db || !auth.currentUser) {
+        showToast('Сначала войди и зарегистрируйся!');
+        document.getElementById('register').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return false;
+      }
+
+      const user = auth.currentUser;
+      const ref = db.collection('players').doc(user.uid);
+      const doc = await ref.get();
+
+      if (!doc.exists) {
+        showToast('Сначала зарегистрируй ник в списке!');
+        document.getElementById('register').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return false;
+      }
+
+      if (doc.data().donated) return true;
+
+      try {
+        await ref.update({
+          donated: true,
+          donatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showToast('✅ Ты в списке участников!');
+        return true;
+      } catch (err) {
+        showToast('Ошибка: ' + (err.message || 'не удалось записать донат'));
+        return false;
+      }
+    }
+
+    function renderDonorsList(docs) {
+      const donors = docs
+        .map(d => d.data().nick)
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, 'ru'));
+
+      donorsCountEl.textContent = donors.length;
+      if (donorsBadge) donorsBadge.textContent = donors.length;
+
+      if (!donors.length) {
+        donorsListEl.innerHTML = '<li class="empty">Пока никого нет — будь первым!</li>';
+        return;
+      }
+
+      donorsListEl.innerHTML = donors.map(nick => `<li>${escapeHtml(nick)}</li>`).join('');
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function subscribeDonorsList() {
+      if (!db || donorsUnsubscribe) return;
+
+      donorsUnsubscribe = db.collection('players')
+        .where('donated', '==', true)
+        .onSnapshot(
+          (snap) => renderDonorsList(snap.docs),
+          () => {
+            donorsListEl.innerHTML = '<li class="empty">Не удалось загрузить список</li>';
+            donorsCountEl.textContent = '?';
+          }
+        );
+    }
+
+    async function updateDonorsList() {
+      if (!db) return;
+      try {
+        const snap = await db.collection('players').where('donated', '==', true).get();
+        renderDonorsList(snap.docs);
+      } catch (_) {
+        donorsListEl.innerHTML = '<li class="empty">Не удалось загрузить список</li>';
+        donorsCountEl.textContent = '?';
+      }
+    }
+
+    if (firebaseReady && auth) {
+      auth.onAuthStateChanged(async (user) => {
+        clearAuthMsg();
+        if (user) {
+          await checkPlayerRegistration(user);
+        } else {
+          showAuthUI();
+          setAuthMode('login');
+        }
+      });
+
+      subscribeDonorsList();
+
+      authForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        clearAuthMsg();
+        const email = document.getElementById('authEmail').value.trim();
+        const password = document.getElementById('authPassword').value;
+        const nick = document.getElementById('authNick').value.trim();
+
+        authSubmit.disabled = true;
+        try {
+          if (authMode === 'complete' && auth.currentUser) {
+            await registerPlayer(auth.currentUser, nick);
+          } else if (authMode === 'signup') {
+            const cred = await auth.createUserWithEmailAndPassword(email, password);
+            await registerPlayer(cred.user, nick);
+          } else {
+            await auth.signInWithEmailAndPassword(email, password);
+          }
+        } catch (err) {
+          const messages = {
+            'auth/email-already-in-use': 'Этот email уже зарегистрирован. Войди.',
+            'auth/invalid-email': 'Некорректный email.',
+            'auth/weak-password': 'Пароль слишком короткий (минимум 6 символов).',
+            'auth/user-not-found': 'Пользователь не найден.',
+            'auth/wrong-password': 'Неверный пароль.',
+            'auth/invalid-credential': 'Неверный email или пароль.',
+            'permission-denied': 'Ошибка доступа к базе. Проверь правила Firestore.'
+          };
+          showAuthMsg(messages[err.code] || err.message || 'Ошибка. Попробуй снова.', 'error');
+        } finally {
+          authSubmit.disabled = false;
+        }
+      });
+
+      logoutBtn.addEventListener('click', () => auth.signOut());
+
+      googleBtn.addEventListener('click', async () => {
+        clearAuthMsg();
+        googleBtn.disabled = true;
+        try {
+          const provider = new firebase.auth.GoogleAuthProvider();
+          await auth.signInWithPopup(provider);
+        } catch (err) {
+          if (err.code !== 'auth/popup-closed-by-user') {
+            const messages = {
+              'auth/popup-blocked': 'Браузер заблокировал окно входа. Разреши всплывающие окна.',
+              'auth/account-exists-with-different-credential': 'Этот email уже зарегистрирован другим способом.',
+              'auth/cancelled-popup-request': 'Подожди, вход уже выполняется.'
+            };
+            showAuthMsg(messages[err.code] || err.message || 'Не удалось войти через Google.', 'error');
+          }
+        } finally {
+          googleBtn.disabled = false;
+        }
+      });
+    } else {
+      showAuthMsg('Укажи firebaseConfig в index.html (строка ~1060). Данные: Firebase Console → Project Settings.', 'error');
+      authForm.querySelector('button').disabled = true;
+      if (googleBtn) googleBtn.disabled = true;
+    }
+  </script>
+
+</body>
+</html>
